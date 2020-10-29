@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension version="2.5" type="plugin" group="vmpayment" method="upgrade">
+    <name>2Checkout API</name>
+    <creationDate>October 2020</creationDate>
+    <author>2Checkout/Verifone</author>
+    <authorUrl>http://www.2checkout.com</authorUrl>
+    <copyright>Copyright (C) 2004-2020 Virtuemart Team. All rights reserved.</copyright>
+    <license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL</license>
+    <version>2.3</version>
+    <description><![CDATA[<a href="http://2checkout.com" target="_blank">2Checkout</a> is a popular payment provider and available in many countries. ]]>
+    </description>
+    <files>
+        <filename plugin="twocheckout">twocheckout.php</filename>
+        <folder>twocheckout</folder>
+        <folder>language</folder>
+    </files>
+    <params addpath="/administrator/components/com_virtuemart/elements">
+        <param type="vmjpluginwarning"/>
+        <param type="spacer" default="VMPAYMENT_TWOCHECKOUT_PAYMENT_TITLE" level="level1"/>
+        <param type="spacer" default="VMPAYMENT_TWOCHECKOUT_PAYMENT_WARNING"/>
+        <param type="spacer" default="" level="level1"/>
+        <param type="spacer" default="VMPAYMENT_TWOCHECKOUT_PAYMENT_SETTINGS" level="level1"/>
+        <param name="payment_logos" type="vmfiles" label="VMPAYMENT_TWOCHECKOUT_LOGOS"
+               description="VMPAYMENT_TWOCHECKOUT_LOGOS_DESC"
+               directory="/images/stories/virtuemart/payment"
+               default="default" hide_default="1" hide_none="1"
+               stripext="0" exclude="^_"/>
+        <param type="spacer" default="" level="level1"/>
+        <param type="spacer" default="VMPAYMENT_TWOCHECKOUT_PARAMS" level="level1"/>
+        <param type="text" name="twocheckout_seller_id" size="50" label="VMPAYMENT_TWOCHECKOUT_SELLER_ID"
+               default="" description="VMPAYMENT_TWOCHECKOUT_SELLER_ID_DESC"/>
+        <param type="password" name="twocheckout_secret_key" size="50" label="VMPAYMENT_TWOCHECKOUT_SECRET_KEY"
+               default="" description="VMPAYMENT_TWOCHECKOUT_SECRET_KEY_DESC"/>
+        <param type="spacer" default="" level="level1"/>
+        <param name="payment_currency" type="vmacceptedcurrency" default="" label="VMPAYMENT_TWOCHECKOUT_CURRENCY" description="VMPAYMENT_TWOCHECKOUT_CURRENCY_DESC"/>
+        <param name="countries" type="vmcountries" scope="com_virtuemart" default="" label="VMPAYMENT_TWOCHECKOUT_COUNTRIES" description="VMPAYMENT_TWOCHECKOUT_COUNTRIES_DESC"/>
+        <param name="min_amount" type="text" label="VMPAYMENT_TWOCHECKOUT_MIN_AMOUNT" description="VMPAYMENT_TWOCHECKOUT_MIN_AMOUNT_EXPLAIN"/>
+        <param name="max_amount" type="text" label="VMPAYMENT_TWOCHECKOUT_MAX_AMOUNT" description="VMPAYMENT_TWOCHECKOUT_MAX_AMOUNT_EXPLAIN"/>
+        <param name="cost_per_transaction" type="text" label="VMPAYMENT_TWOCHECKOUT_COST_PER_TRANSACTION" description="VMPAYMENT_TWOCHECKOUT_COST_PER_TRANSACTION_EXPLAIN"/>
+        <param name="cost_percent_total" type="text" label="VMPAYMENT_TWOCHECKOUT_COST_PERCENT_TOTAL" description="VMPAYMENT_TWOCHECKOUT_COST_PERCENT_TOTAL_EXPLAIN"/>
+        <param name="tax_id" type="vmtaxes" scope="com_virtuemart" label="VMPAYMENT_TWOCHECKOUT_TAX" description="VMPAYMENT_TWOCHECKOUT_TAX_EXPLAIN"/>
+        <param type="spacer" default="" level="level1"/>
+        <param name="debug" type="radio" default="0" label="VMPAYMENT_TWOCHECKOUT_DEBUG" description="VMPAYMENT_TWOCHECKOUT_DEBUG_DESC">
+            <option value="0">COM_VIRTUEMART_NO</option>
+            <option value="1">COM_VIRTUEMART_YES</option>
+        </param>
+        <param name="sandbox" type="radio" default="1" label="VMPAYMENT_TWOCHECKOUT_SANDBOX" description="VMPAYMENT_TWOCHECKOUT_SANDBOX_DESC">
+            <option value="0">COM_VIRTUEMART_NO</option>
+            <option value="1">COM_VIRTUEMART_YES</option>
+        </param>
+        <param name="default_style" type="radio" default="1" label="VMPAYMENT_TWOCHECKOUT_DEFAULT_STYLE" description="VMPAYMENT_TWOCHECKOUT_DEFAULT_STYLE_DESC">
+            <option value="0">COM_VIRTUEMART_NO</option>
+            <option value="1">COM_VIRTUEMART_YES</option>
+        </param>
+        <param name="custom_style" type="textarea" label="VMPAYMENT_TWOCHECKOUT_CUSTOM_STYLE_JSON" description="VMPAYMENT_TWOCHECKOUT_CUSTOM_STYLE_JSON_DESC"/>
+        <param type="spacer" default="" level="level1"/>
+        <param type="spacer" default="VMPAYMENT_TWOCHECKOUT_PAYMENT_PAGE" level="level1"/>
+        <param name="status_pending" type="vmorderstate" scope="com_virtuemart" default="P" label="VMPAYMENT_TWOCHECKOUT_STATUS_PENDING" description="VMPAYMENT_TWOCHECKOUT_STATUS_PENDING_EXPLAIN"/>
+        <param name="status_success" type="vmorderstate" scope="com_virtuemart" default="U" label="VMPAYMENT_TWOCHECKOUT_STATUS_SUCCESS" description="VMPAYMENT_TWOCHECKOUT_STATUS_SUCCESS_EXPLAIN"/>
+        <param name="status_canceled" type="vmorderstate" scope="com_virtuemart" default="X" label="VMPAYMENT_TWOCHECKOUT_STATUS_FAILED" description="VMPAYMENT_TWOCHECKOUT_STATUS_FAILED_EXPLAIN"/>
+    </params>
+    <vmconfig>
+        <fields name="params">
+            <fieldset name="payment" addfieldpath="/administrator/components/com_virtuemart/fields">
+                <field type="vmtitle" description="" default="VMPAYMENT_TWOCHECKOUT_PAYMENT_TITLE"/>
+                <field type="text" name="twocheckout_seller_id" size="50" label="VMPAYMENT_TWOCHECKOUT_SELLER_ID" default="" description="VMPAYMENT_TWOCHECKOUT_SELLER_ID_DESC"/>
+                <field type="password" name="twocheckout_secret_key" size="50" label="VMPAYMENT_TWOCHECKOUT_SECRET_KEY" default="" description="VMPAYMENT_TWOCHECKOUT_SECRET_KEY_DESC"/>
+                <field name="payment_currency" type="vmacceptedcurrency" default="" label="VMPAYMENT_TWOCHECKOUT_CURRENCY" description="VMPAYMENT_TWOCHECKOUT_CURRENCY_DESC"/>
+                <field name="countries" type="vmcountries" scope="com_virtuemart" default="" label="VMPAYMENT_TWOCHECKOUT_COUNTRIES" description="VMPAYMENT_TWOCHECKOUT_COUNTRIES_DESC"/>
+                <field name="min_amount" type="text" label="VMPAYMENT_TWOCHECKOUT_MIN_AMOUNT" description="VMPAYMENT_TWOCHECKOUT_MIN_AMOUNT_EXPLAIN"/>
+                <field name="max_amount" type="text" label="VMPAYMENT_TWOCHECKOUT_MAX_AMOUNT" description="VMPAYMENT_TWOCHECKOUT_MAX_AMOUNT_EXPLAIN"/>
+                <field name="cost_per_transaction" type="text" label="VMPAYMENT_TWOCHECKOUT_COST_PER_TRANSACTION" description="VMPAYMENT_TWOCHECKOUT_COST_PER_TRANSACTION_EXPLAIN"/>
+                <field name="cost_percent_total" type="text" label="VMPAYMENT_TWOCHECKOUT_COST_PERCENT_TOTAL" description="VMPAYMENT_TWOCHECKOUT_COST_PERCENT_TOTAL_EXPLAIN"/>
+                <field name="tax_id" type="vmtaxes" scope="com_virtuemart" label="VMPAYMENT_TWOCHECKOUT_TAX" description="VMPAYMENT_TWOCHECKOUT_TAX_EXPLAIN"/>
+                <field name="debug" type="radio" default="0" label="VMPAYMENT_TWOCHECKOUT_DEBUG" description="VMPAYMENT_TWOCHECKOUT_DEBUG_DESC">
+                    <option value="0">COM_VIRTUEMART_NO</option>
+                    <option value="1">COM_VIRTUEMART_YES</option>
+                </field>
+                <field name="sandbox" type="radio" default="1" label="VMPAYMENT_TWOCHECKOUT_SANDBOX" description="VMPAYMENT_TWOCHECKOUT_SANDBOX_DESC">
+                    <option value="0">COM_VIRTUEMART_NO</option>
+                    <option value="1">COM_VIRTUEMART_YES</option>
+                </field>
+                <field name="default_style" type="radio" default="1" label="VMPAYMENT_TWOCHECKOUT_DEFAULT_STYLE" description="VMPAYMENT_TWOCHECKOUT_DEFAULT_STYLE_DESC">
+                    <option value="0">COM_VIRTUEMART_NO</option>
+                    <option value="1">COM_VIRTUEMART_YES</option>
+                </field>
+                <field name="custom_style" type="textarea" label="VMPAYMENT_TWOCHECKOUT_CUSTOM_STYLE_JSON"
+                       description="VMPAYMENT_TWOCHECKOUT_CUSTOM_STYLE_JSON_DESC" default='{
+                    "margin": "0",
+                    "fontFamily": "Helvetica, sans-serif",
+                    "fontSize": "1rem",
+                    "fontWeight": "400",
+                    "lineHeight": "1.5",
+                    "color": "#212529",
+                    "textAlign": "left",
+                    "backgroundColor": "#FFFFFF",
+                    "*": {
+                        "boxSizing": "border-box"
+                    },
+                    ".no-gutters": {
+                        "marginRight": 0,
+                        "marginLeft": 0
+                    },
+                    ".row": {
+                        "display": "flex",
+                        "flexWrap": "wrap"
+                    },
+                    ".col": {
+                        "flexBasis": "0",
+                        "flexGrow": "1",
+                        "maxWidth": "100%",
+                        "padding": "0",
+                        "position": "relative",
+                        "width": "100%"
+                    },
+                    "div": {
+                        "display": "block"
+                    },
+                    ".field-container": {
+                        "paddingBottom": "14px"
+                    },
+                    ".field-wrapper": {
+                        "paddingRight": "25px"
+                    },
+                    ".input-wrapper": {
+                        "position": "relative"
+                    },
+                    "label": {
+                        "display": "inline-block",
+                        "marginBottom": "9px",
+                        "color": "#313131",
+                        "fontSize": "14px",
+                        "fontWeight": "300",
+                        "lineHeight": "17px"
+                    },
+                    "input": {
+                        "overflow": "visible",
+                        "margin": 0,
+                        "fontFamily": "inherit",
+                        "display": "block",
+                        "width": "100%",
+                        "height": "42px",
+                        "padding": "10px 12px",
+                        "fontSize": "18px",
+                        "fontWeight": "400",
+                        "lineHeight": "22px",
+                        "color": "#313131",
+                        "backgroundColor": "#FFF",
+                        "backgroundClip": "padding-box",
+                        "border": "1px solid #CBCBCB",
+                        "borderRadius": "3px",
+                        "transition": "border-color .15s ease-in-out,box-shadow .15s ease-in-out",
+                        "outline": 0
+                    },
+                    "input:focus": {
+                        "border": "1px solid #5D5D5D",
+                        "backgroundColor": "#FFFDF2"
+                    },
+                    ".is-error input": {
+                        "border": "1px solid #D9534F"
+                    },
+                    ".is-error input:focus": {
+                        "backgroundColor": "#D9534F0B"
+                    },
+                    ".is-valid input": {
+                        "border": "1px solid #1BB43F"
+                    },
+                    ".is-valid input:focus": {
+                        "backgroundColor": "#1BB43F0B"
+                    },
+                    ".validation-message": {
+                        "color": "#D9534F",
+                        "fontSize": "10px",
+                        "fontStyle": "italic",
+                        "marginTop": "6px",
+                        "marginBottom": "-5px",
+                        "display": "block",
+                        "lineHeight": "1"
+                    },
+                    ".card-expiration-date": {
+                        "paddingRight": ".5rem"
+                    },
+                    ".is-empty input": {
+                        "color": "#EBEBEB"
+                    },
+                    ".lock-icon": {
+                        "top": "calc(50% - 7px)",
+                        "right": "10px"
+                    },
+                    ".valid-icon": {
+                        "top": "calc(50% - 8px)",
+                        "right": "-25px"
+                    },
+                    ".error-icon": {
+                        "top": "calc(50% - 8px)",
+                        "right": "-25px"
+                    },
+                    ".card-icon": {
+                        "top": "calc(50% - 10px)",
+                        "left": "10px",
+                        "display": "none"
+                    },
+                    ".is-empty .card-icon": {
+                        "display": "block"
+                    },
+                    ".is-focused .card-icon": {
+                        "display": "none"
+                    },
+                    ".card-type-icon": {
+                        "right": "30px",
+                        "display": "block"
+                    },
+                    ".card-type-icon.visa": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.mastercard": {
+                        "top": "calc(50% - 14.5px)"
+                    },
+                    ".card-type-icon.amex": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.discover": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.jcb": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.dankort": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.cartebleue": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.diners": {
+                        "top": "calc(50% - 14px)"
+                    },
+                    ".card-type-icon.elo": {
+                        "top": "calc(50% - 14px)"
+                    }
+                }'/>
+                <field type="spacer" default="" level="level1"/>
+                <field type="spacer" default="VMPAYMENT_TWOCHECKOUT_PAYMENT_PAGE" level="level1"/>
+                <field name="status_pending" type="vmorderstate" scope="com_virtuemart" default="P" label="VMPAYMENT_TWOCHECKOUT_STATUS_PENDING" description="VMPAYMENT_TWOCHECKOUT_STATUS_PENDING_EXPLAIN"/>
+                <field name="status_success" type="vmorderstate" scope="com_virtuemart" default="U" label="VMPAYMENT_TWOCHECKOUT_STATUS_SUCCESS" description="VMPAYMENT_TWOCHECKOUT_STATUS_SUCCESS_EXPLAIN"/>
+                <field name="status_canceled" type="vmorderstate" scope="com_virtuemart" default="X" label="VMPAYMENT_TWOCHECKOUT_STATUS_FAILED" description="VMPAYMENT_TWOCHECKOUT_STATUS_FAILED_EXPLAIN"/>
+                <field name="payment_logos" type="imagelist" label="VMPAYMENT_TWOCHECKOUT_LOGOS" multiple="true"
+                       description="VMPAYMENT_TWOCHECKOUT_LOGOS_DESC"
+                       directory="/images/stories/virtuemart/payment"
+                       default="" hide_default="1" hide_none="1"
+                       stripext="0" exclude="^_"/>
+            </fieldset>
+        </fields>
+    </vmconfig>
+</extension>

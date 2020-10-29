@@ -1,32 +1,36 @@
-### _[Signup free with 2Checkout and start selling!](https://www.2checkout.com/referral?r=git2co)_
+# VirtueMart
+2Checkout VirtueMart Connector
 
-### Supports VirtueMart -v 2.x-3.x & Joomla -v 2.5.x-3.x
+### _[Signup free with 2Checkout and start selling!](https://www.2checkout.com/signup)_
+
+This repository includes plugins for each 2Checkout interface:
+* **twocheckout** : 2PayJS/API
+* **twocheckout_inline** : Inline Checkout
+* **twocheckout_convert_plus** : Hosted Checkout
+
+### Integrate VirtueMart with 2Checkout
 ----------------------------------------
 
-### VirtueMart Settings
+### 2Checkout Payment Module Setup
 
-1. Download or clone extension at `https://github.com/craigchristenson/VirtueMart-2Checkout`
-2. In your Joomla admin, under **Extensions** -> **Extentsion Manager**.
-3. Upload `tco.zip` under **Upload Package File**.
-4. Under **Components** -> **Shop** -> **ViruteMart** -> **Payment Methods**, click **New**.
-5. Select `2Checkout` as the **Payment Method**.
-6. Enter a **Payment Method Name**.
-7. Select `Yes` for **Published**.
-8. Enter a **Payment Description**. _(Example: Credit Card (Visa, MasterCard, American Express, Discover, JCB, Diners Club) and PayPal)_
-9. Click **Configuration**.
-10. Enter your **2Checkout Seller ID**. _(2Checkout Account Number)_
-11. Enter your **2Checkout Secret Word**. _(Must be the same value entered on your 2Checkout Site Management page.)_
-12. Set **Sandbox** to `Yes` for sandbox mode. For live sales keep **Sandbox** at `No`.
-13. Set **Inline Checkout** to `Yes` to use Inline Checkout. For Hosted Checkout keep **Inline Checkout** at `No`.
-14. _(Optional)_ Select your preferred logo if you have one _(VirtueMart Images are stored in `/images/stories/virtuemart/payment`)_
-15. Click **Save**
-
-### 2Checkout Settings
+#### 2Checkout Settings
 
 1. Sign in to your 2Checkout account.
-2. Click the **Account** tab and **Site Management** subcategory.
-3. Under **Direct Return** select **Header Redirect**.
-4. Enter your **Secret Word**._(Must be the same value entered in your VirtueMart admin.)_
-5. Click **Save Changes**.
+2. Navigate to **Dashboard** → **Integrations** → **Webhooks & API section**
+3. There you can find the 'Merchant Code', 'Secret key', and the 'Buy link secret word'
+4. Navigate to **Dashboard** → **Integrations** → **Ipn Settings**
+5. Set the IPN URL which should be https://{your-site-name.com}/index.php?option=com_virtuemart&view=pluginresponse&task=pluginnotification&tmpl=component
+6. Enable 'Triggers' in the IPN section. It’s simpler to enable all the triggers. Those who are not required will simply not be used.
 
-**Please contact 2Checkout directly with any integration questions.**
+#### VirtueMart Settings
+
+1. Login to your Virtuemar
+2. In your Joomla admin, navigate to **Extensions** -> **Manage** -> **Install** and upload the plugin for the payment interface you wish to use.
+3. Navigate to **Componets** -> **VirtueMart** -> **Payment Methods** and click **New**.
+4. Check to enable.
+5. Enter the name and description, set to published and save your changes. Click on Configuration.
+6. Enter your **Seller ID** found in your 2Checkout panel Integrations section.
+7. Enter your **Secret Key** found in your 2Checkout panel Integrations section.
+8. Enter your **Secret Word** 2Checkout panel Integrations section _(Only used for Inline Checkout and Hosted Checkout modules)_
+9. Set your currency and test/live mode settings.
+10. Save your changes.
