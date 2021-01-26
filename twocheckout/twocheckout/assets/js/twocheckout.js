@@ -71,7 +71,11 @@ function prepareTwoPayJs() {
                         if (result.status && result.redirect) {
                             window.location.href = result.redirect;
                         } else {
-                            Virtuemart.stopVmLoading();
+                            if(typeof Virtuemart.stopVmLoading === 'function') {
+                                Virtuemart.stopVmLoading();
+                            } else {
+                                jQuery( ".vmLoadingDiv" ).hide();
+                            }
                             jQuery('#tcoApiForm').prepend('<div class="tco-error">' + result.messages + '</div>');
                         }
                     });
@@ -79,8 +83,11 @@ function prepareTwoPayJs() {
                     if (error.toString() !== 'Error: Target window is closed') {
                         jQuery('#tcoApiForm').prepend('<div class="tco-error">' + error + '</div>');
                         console.error(error);
-                        Virtuemart.stopVmLoading();
-                    }
+                        if(typeof Virtuemart.stopVmLoading === 'function') {
+                            Virtuemart.stopVmLoading();
+                        } else {
+                            jQuery( ".vmLoadingDiv" ).hide();
+                        }                    }
                 });
             }
         });

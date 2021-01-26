@@ -53,7 +53,9 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 
 
 		$varsToPush = $this->getVarsToPush();
-		$this->addVarsToPushCore( $varsToPush, 1 );
+		if (method_exists($this, 'addVarsToPushCore')) {
+			$this->addVarsToPushCore( $varsToPush, 1 );
+		}
 		$this->setConfigParameterable( $this->_configTableFieldName, $varsToPush );
 	}
 
@@ -221,7 +223,7 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 		$api = new TwoCheckoutConvertApi();
 		$api->setSellerId($method->tco_seller_id);
 		$api->setSecretKey($method->tco_secret_key);
-		$api_response = $api->call( 'orders/' . $refno . '/', [], 'GET' );
+		$api_response = $api->call( '/orders/' . $refno . '/', [], 'GET' );
 		if(!empty($api_response['Status']) && isset($api_response['Status']) ){
 			if ( in_array( $api_response['Status'], [ 'AUTHRECEIVED', 'COMPLETE' ] ) )
 			{

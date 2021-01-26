@@ -56,7 +56,9 @@ class plgVmpaymentTco_Inline extends vmPSPlugin {
 		$this->loadTcoLibrary( 'TwoCheckoutInlineApi' );
 
 		$varsToPush = $this->getVarsToPush();
-		$this->addVarsToPushCore( $varsToPush, 1 );
+		if (method_exists($this, 'addVarsToPushCore')) {
+			$this->addVarsToPushCore( $varsToPush, 1 );
+		}
 		$this->setConfigParameterable( $this->_configTableFieldName, $varsToPush );
 	}
 
@@ -113,7 +115,7 @@ class plgVmpaymentTco_Inline extends vmPSPlugin {
 		$vendorModel->addImages( $vendor, 1 );
 		$this->getPaymentCurrency( $this->current_method );
 		$q  = 'SELECT `currency_code_3` FROM `#__virtuemart_currencies` WHERE `virtuemart_currency_id`="' . (int) $this->current_method->payment_currency . '" ';
-		$db = &JFactory::getDBO();
+		$db = JFactory::getDBO();
 		$db->setQuery( $q );
 
 		return $db->loadResult();
@@ -403,7 +405,7 @@ class plgVmpaymentTco_Inline extends vmPSPlugin {
 		$api = new TwoCheckoutInlineApi();
 		$api->setSellerId($method->tco_seller_id);
 		$api->setSecretKey($method->tco_secret_key);
-		$api_response = $api->call( 'orders/' . $refno . '/', [], 'GET' );
+		$api_response = $api->call( '/orders/' . $refno . '/', [], 'GET' );
 		if(!empty($api_response['Status']) && isset($api_response['Status']) ){
 			if ( in_array( $api_response['Status'], [ 'AUTHRECEIVED', 'COMPLETE' ] ) )
 			{
@@ -506,7 +508,7 @@ class plgVmpaymentTco_Inline extends vmPSPlugin {
 				$this->current_method = $currentMethod;
 
 				$virtuemart_paymentmethod_id = $this->current_method->virtuemart_paymentmethod_id;
-				$seller_id = $this->current_method->twocheckout_seller_id;
+				$seller_id = $this->current_method->tco_seller_id;
 				$methodSalesPrice = $this->setCartPrices($cart, $cartPrices, $this->current_method);
 				$htmlForm = $this->getPluginHtml($currentMethod, $selected, $methodSalesPrice);
 				ob_start();

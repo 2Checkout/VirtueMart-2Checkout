@@ -15,12 +15,12 @@
  * http://virtuemart.net
  */
 
-let tcoCardElementLoaded = false;
+var tcoCardElementLoaded = false;
 
 jQuery(document).ajaxComplete(function (event, jqxhr, settings) {
     jQuery('#checkoutFormSubmit').bind();
     if (settings.url.indexOf('/cart?tmpl=component') >= 0) {
-        let paymentId = jQuery('#tcoInlineForm').data('pid'),
+        var paymentId = jQuery('#tcoInlineForm').data('pid'),
             selected = jQuery('input[name="virtuemart_paymentmethod_id"]:checked').val();
         if (parseInt(paymentId) === parseInt(selected)) {
             prepareInline();
@@ -29,7 +29,7 @@ jQuery(document).ajaxComplete(function (event, jqxhr, settings) {
 });
 
 window.addEventListener('load', function () {
-    let paymentId = jQuery('#tcoInlineForm').data('pid'),
+    var paymentId = jQuery('#tcoInlineForm').data('pid'),
         selected = jQuery('input[name="virtuemart_paymentmethod_id"]:checked').val();
 
     if (parseInt(paymentId) === parseInt(selected)) {
@@ -40,7 +40,7 @@ window.addEventListener('load', function () {
     jQuery('body').on('change', 'input[name="virtuemart_paymentmethod_id"]', function (e) {
         e.preventDefault();
         tcoCardElementLoaded = false;
-        let selected = jQuery(this).val(),
+        var selected = jQuery(this).val(),
             paymentId = jQuery('#tcoApiForm').data('pid');
 
         jQuery('#checkoutFormSubmit').bind();
@@ -56,7 +56,7 @@ function prepareInline() {
     if (jQuery('#checkoutFormSubmit').attr('name') === 'confirm') {
         jQuery('#checkoutFormSubmit').unbind();
     }
-    let seller_id = jQuery('#tcoInlineForm').data('seller'),
+    var seller_id = jQuery('#tcoInlineForm').data('seller'),
         order_done_url = jQuery('#tcoApiForm').data('order');
 
     jQuery("#checkoutFormSubmit").one("click", function (event) {
@@ -65,13 +65,13 @@ function prepareInline() {
             jQuery('#checkoutFormSubmit').vm2front('startVmLoading');
             jQuery('#checkoutForm').append('<input name="confirm" value="1" type="hidden">');
 
-            let form = jQuery('#checkoutForm');
+            var form = jQuery('#checkoutForm');
             jQuery.ajax({
                 type: 'POST',
                 url: order_done_url,
                 data: form.serialize()
             }).done(function (response) {
-                let payload = JSON.parse(response);
+                var payload = JSON.parse(response);
                 (function (document, src, libName, config) {
                     var script = document.createElement('script');
                     script.src = src;
@@ -98,7 +98,11 @@ function prepareInline() {
                         TwoCoInlineCart.cart.setSignature(payload['signature']);
                         TwoCoInlineCart.cart.setAutoAdvance(true);
 
-                        Virtuemart.stopVmLoading();
+                        if(typeof Virtuemart.stopVmLoading === 'function') {
+                            Virtuemart.stopVmLoading();
+                        } else {
+                            jQuery( ".vmLoadingDiv" ).hide();
+                        }
 
                         TwoCoInlineCart.cart.checkout();
 
@@ -107,9 +111,16 @@ function prepareInline() {
                 })(document, 'https://secure.2checkout.com/checkout/client/twoCoInlineCart.js', 'TwoCoInlineCart',
                     {"app": {"merchant": payload.merchant}, "cart": {"host": "https:\/\/secure.2checkout.com"}}
                 );
+
+                jQuery("input[name='confirm']").remove();
+                prepareInline();
             })
                 .error(function (res) {
-                    Virtuemart.stopVmLoading();
+                    if(typeof Virtuemart.stopVmLoading === 'function') {
+                        Virtuemart.stopVmLoading();
+                    } else {
+                        jQuery( ".vmLoadingDiv" ).hide();
+                    }
                     console.log('Ajax error!');
                     return false;
                 });

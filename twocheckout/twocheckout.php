@@ -54,7 +54,9 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
         $this->loadLibraries();
 
         $varsToPush = $this->getVarsToPush();
-        $this->addVarsToPushCore($varsToPush, 1);
+        if (method_exists($this, 'addVarsToPushCore')) {
+            $this->addVarsToPushCore( $varsToPush, 1 );
+        }
         $this->setConfigParameterable($this->_configTableFieldName, $varsToPush);
     }
 
@@ -230,14 +232,14 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
             $api->setSecretKey($this->current_method->twocheckout_secret_key);
             $orderModel = VmModel::getModel('orders');
 
-            $apiResponse = $api->call('orders', $orderParams);
+            $apiResponse = $api->call('/orders', $orderParams);
             if (!$apiResponse) {
                 $error = 'The payment could not be processed for order ' . $this->order_number . '! Please try again or contact us.';
                 $jsonResponse = ['status' => false, 'messages' => $error, 'redirect' => null];
             } else {
-                if ($apiResponse['error_code']) {
+                if (isset($apiResponse['error_code'])) {
                     $jsonResponse = ['status' => false, 'messages' => $apiResponse['message'], 'redirect' => null];
-                } elseif ($apiResponse['Errors']) { // errors that must be shown to the client
+                } elseif (isset($apiResponse['Errors'])) { // errors that must be shown to the client
                     $error = '';
                     foreach ($apiResponse['Errors'] as $key => $value) {
                         $error .= $value . PHP_EOL;
@@ -245,8 +247,11 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
 
                     $jsonResponse = ['status' => false, 'messages' => $error, 'redirect' => null];
                 } else {
-                    $has3ds = $this->hasAuthorize3DS($apiResponse['PaymentDetails']['PaymentMethod']['Authorize3DS']);
-                    if ($has3ds) {
+                    $has3ds = false;
+                    if (isset($apiResponse['PaymentDetails']['PaymentMethod']['Authorize3DS'])) {
+                        $has3ds = $this->hasAuthorize3DS($apiResponse['PaymentDetails']['PaymentMethod']['Authorize3DS']);
+                    }
+                   if ($has3ds) {
                         $orderModel->updateStatusForOneOrder(
                             $order['details']['BT']->virtuemart_order_id,
                             ['order_status' => $this->current_method->status_pending],
@@ -355,10 +360,7 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
         $vendorModel->addImages($vendor, 1);
         $this->getPaymentCurrency($this->current_method);
         $q = 'SELECT `currency_code_3` FROM `#__virtuemart_currencies` WHERE `virtuemart_currency_id`="' . (int)$this->current_method->payment_currency . '" ';
-        $db = &JFactory::getDBO();
-        $db->setQuery($q);
-
-        return $db->loadResult();
+        return JFactory::getDBO()->setQuery($q)->loadResult();
     }
 
     /**
@@ -500,35 +502,37 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
 
     public function plgVmDisplayListFEPayment(VirtueMartCart $cart, $selected = 0, &$htmlIn)
     {
-        $document = Factory::getDocument();
-        $document->addStyleSheet('/plugins/vmpayment/twocheckout/twocheckout/assets/css/twocheckout.css',
-            ['version' => 'auto']);
-        vmJsApi::addJScript('2payJs', 'https://2pay-js.2checkout.com/v1/2pay.js');
+        $document = JFactory::getDocument(); 
+        $css_path =  JRoute::_(JURI::base()."plugins/vmpayment/twocheckout/twocheckout/assets/css/twocheckout.css"); 
+        $document->addCustomTag('<link rel="stylesheet" type="text/css" href='.$css_path.' media="all">');
+        $document->addScript('https://2pay-js.2checkout.com/v1/2pay.js');
         vmJsApi::addJScript('twocheckout_api', '/plugins/vmpayment/twocheckout/twocheckout/assets/js/twocheckout.js');
 
-        foreach ($this->methods as $currentMethod) {
-            if ($this->checkConditions($cart, $currentMethod, $cart->cartPrices)) {
-                $this->current_method = $currentMethod;
+        if (isset($this->methods)) {
+            foreach ($this->methods as $currentMethod) {
+                if ($this->checkConditions($cart, $currentMethod, $cart->cartPrices)) {
+                    $this->current_method = $currentMethod;
 
-                $virtuemart_paymentmethod_id = $this->current_method->virtuemart_paymentmethod_id;
-                $seller_id = $this->current_method->twocheckout_seller_id;
-                $default_style = $this->current_method->default_style;
-                $style = preg_replace('/\v(?:[\v\h]+)/', '', $this->current_method->custom_style);
-                $style = preg_replace("/\s+/", "", $style);
-                $methodSalesPrice = $this->setCartPrices($cart, $cart->cartPrices, $this->current_method);
-                $htmlForm = $this->getPluginHtml($currentMethod, $selected, $methodSalesPrice);
-                if ($this->current_method->sandbox) {
-                    $htmlForm .= '<span class="red" title="' . vmText::_('VMPAYMENT_TWOCHECKOUT_SANDBOX_DESC') . '">(test order)</span>';
-                }
-                if ($this->current_method->sandbox) {
-                    $htmlForm .= '<p class="vmpayment_description">' . $this->current_method->payment_desc . '</p>';
-                }
-                ob_start();
-                require_once JPATH_PLUGINS . '/vmpayment/twocheckout/twocheckout/views/form.php';
-                $htmlForm .= ob_get_contents();    // get the contents from the buffer
-                ob_end_clean();
+                    $virtuemart_paymentmethod_id = $this->current_method->virtuemart_paymentmethod_id;
+                    $seller_id = $this->current_method->twocheckout_seller_id;
+                    $default_style = $this->current_method->default_style;
+                    $style = preg_replace('/\v(?:[\v\h]+)/', '', $this->current_method->custom_style);
+                    $style = preg_replace("/\s+/", "", $style);
+                    $methodSalesPrice = $this->setCartPrices($cart, $cart->cartPrices, $this->current_method);
+                    $htmlForm = $this->getPluginHtml($currentMethod, $selected, $methodSalesPrice);
+                    if ($this->current_method->sandbox) {
+                        $htmlForm .= '<span class="red" title="' . vmText::_('VMPAYMENT_TWOCHECKOUT_SANDBOX_DESC') . '">(test order)</span>';
+                    }
+                    if ($this->current_method->sandbox) {
+                        $htmlForm .= '<p class="vmpayment_description">' . $this->current_method->payment_desc . '</p>';
+                    }
+                    ob_start();
+                    require_once JPATH_PLUGINS . '/vmpayment/twocheckout/twocheckout/views/form.php';
+                    $htmlForm .= ob_get_contents();    // get the contents from the buffer
+                    ob_end_clean();
 
-                $htmlIn[] = [$htmlForm];
+                    $htmlIn[] = [$htmlForm];
+                }
             }
         }
 
@@ -544,15 +548,16 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
      */
     private function getBillingDetails($address)
     {
+        $countryCode = ShopFunctions::getCountryByID($address->virtuemart_country_id, 'country_2_code');
         $newAddress = [
             'Address1'    => $address->address_1,
             'City'        => $address->city,
             'State'       => isset($address->virtuemart_state_id) ? ShopFunctions::getStateByID($address->virtuemart_state_id) : 'XX',
-            'CountryCode' => ShopFunctions::getCountryByID($address->virtuemart_country_id, 'country_2_code') ?? 'XX',
+            'CountryCode' => $countryCode ? $countryCode : 'XX',
             'Email'       => $address->email,
             'FirstName'   => $address->first_name,
             'LastName'    => $address->last_name,
-            'Phone'       => $address->phone_1 ?? $address->phone_2,
+            'Phone'       => trim($address->phone_1 . ' ' . $address->phone_2),
             'Zip'         => $address->zip,
             'Company'     => $address->company
         ];
@@ -573,7 +578,7 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
      *
      * @since version
      */
-    private function getItem(float $total)
+    private function getItem($total)
     {
         $config = JFactory::getConfig();
 
@@ -603,7 +608,7 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
      *
      * @since version
      */
-    private function getPaymentDetails(string $token, $order)
+    private function getPaymentDetails($token, $order)
     {
         $paymentId = $order['details']['BT']->virtuemart_paymentmethod_id;
         $orderId = $order['details']['BT']->virtuemart_order_id;

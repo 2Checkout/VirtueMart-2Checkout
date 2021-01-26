@@ -149,7 +149,9 @@ class TwoCheckoutInlineLibrary {
 		$dbValues['cost_percent_total']          = $current_method->cost_percent_total;
 		$dbValues['payment_currency']            = $current_method->payment_currency;
 		$dbValues['payment_order_total']         = $totalInPaymentCurrency;
-		$dbValues['tax_id']                      = $current_method->tax_id;
+		if (isset($current_method->tax_id)) {
+			$dbValues['tax_id'] = $current_method->tax_id;
+		}
 
 		return $dbValues;
 	}

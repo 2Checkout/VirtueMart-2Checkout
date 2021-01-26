@@ -135,15 +135,17 @@ class TwoCheckoutInlineApi
      * @throws Exception
      * @since version
      */
-    public function call(string $endpoint, array $params, $method = 'POST')
+    public function call($endpoint, $params, $method = 'POST')
     {
         // if endpoint does not starts or end with a '/' we add it, as the API needs it
-        if ($endpoint[0] !== '/') {
+        if (!preg_match('#^/#', $endpoint)) {
             $endpoint = '/' . $endpoint;
         }
-        if ($endpoint[-1] !== '/') {
+
+        if (!preg_match('#/$#', $endpoint)) {
             $endpoint = $endpoint . '/';
         }
+
         $headers = $this->getHeaders();
         try {
             $url = self::API_URL . self::API_VERSION . $endpoint;
