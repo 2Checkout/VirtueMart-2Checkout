@@ -155,4 +155,36 @@ class TwoCheckoutInlineLibrary {
 
 		return $dbValues;
 	}
+
+	/**
+	 * @param $tableName
+	 * @param $virtuemartOrderId
+	 * @param $tcoOrderNumber
+	 *
+	 * @return mixed
+	 */
+	public function updateInternalDataParams($tableName, $virtuemartOrderId, $tcoOrderNumber) {
+		if (isset($virtuemartOrderId) && !empty($virtuemartOrderId)) {
+			$db = JFactory::getDBO ();
+			$query = 'SELECT * FROM `' . $tableName . '` WHERE virtuemart_order_id="' . $virtuemartOrderId . '"';
+			$db->setQuery ($query);
+			$existingDbValues = $db->loadAssoc();
+			$dbValues = array();
+
+			if (!empty($existingDbValues)) {
+				$dbValues['virtuemart_order_id']         = $virtuemartOrderId;
+				$dbValues['payment_name']                = $existingDbValues['payment_name'];
+				$dbValues['virtuemart_paymentmethod_id'] = $existingDbValues['virtuemart_paymentmethod_id'];
+				$dbValues['tco_custom']                  = $existingDbValues['tco_custom'];
+				$dbValues['cost_per_transaction']        = $existingDbValues['cost_per_transaction'];
+				$dbValues['cost_percent_total']          = $existingDbValues['cost_percent_total'];
+				$dbValues['payment_currency']            = $existingDbValues['payment_currency'];
+				$dbValues['payment_order_total']         = $existingDbValues['payment_order_total'];
+				$dbValues['tax_id']                      = $existingDbValues['tax_id'];
+				$dbValues['tco_response_order_number']   = $tcoOrderNumber;
+			}
+		}
+
+		return $dbValues;
+	}
 }

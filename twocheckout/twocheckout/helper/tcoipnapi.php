@@ -1,6 +1,6 @@
 <?php
 
-class TcoIpn
+class TcoIpnApi
 {
 
     // NEVER catch exceptions in this file
@@ -112,6 +112,11 @@ class TcoIpn
         $this->_order_model = VmModel::getModel('orders');
         $this->_order = $this->_order_model->getOrder($this->_order_number);
 
+	    if( ! $this->_order ){
+		    throw new Exception( sprintf( 'Cannot identify virtue mart order number "%s".',
+			    $this->_ipn_params['REFNOEXT'] ) );
+	    }
+
         // do not wrap this in a try catch
         // it's intentionally left out so that the exceptions will bubble up
         // and kill the script if one should arise
@@ -208,30 +213,36 @@ class TcoIpn
                 case self::ORDER_STATUS_PURCHASE_PENDING:
                 case self::ORDER_STATUS_PENDING_APPROVAL:
                 case self::ORDER_STATUS_PAYMENT_AUTHORIZED:
-                    $order['order_status'] = $this->_current_method->status_pending;
-                    $order['comments'] = vmText::sprintf('VMPAYMENT_TWOCHECKOUT_PAYMENT_STATUS_PENDING', $this->_order_number);
+	                if ($this->_order['details']['BT']->order_status != 'C') {
+		                $order['order_status'] = $this->_current_method->status_pending;
+		                $order['comments']     = vmText::sprintf( 'VMPAYMENT_TWOCHECKOUT_PAYMENT_STATUS_PENDING', $this->_order_number );
+		                $this->_order_model->updateStatusForOneOrder($this->_order_number, $order, true);
+	                }
                     break;
 
                 case self::ORDER_STATUS_COMPLETE:
-                    $order['order_status'] = $this->_current_method->status_success;
-                    $order['comments'] = vmText::sprintf('VMPAYMENT_TWOCHECKOUT_PAYMENT_STATUS_CONFIRMED', $this->_order_number);
+	                if ($this->_order['details']['BT']->order_status != 'C') {
+		                $order['order_status'] = $this->_current_method->status_success;
+		                $order['comments']     = vmText::sprintf( 'VMPAYMENT_TWOCHECKOUT_PAYMENT_STATUS_CONFIRMED', $this->_order_number );
+		                $this->_order_model->updateStatusForOneOrder( $this->_order_number, $order, true );
+	                }
                     break;
 
 	            case self::ORDER_STATUS_INVALID:
 		            $order['order_status'] = $this->_current_method->status_canceled;
 		            $order['comments']     = vmText::sprintf( 'VMPAYMENT_TWOCHECKOUT_PAYMENT_STATUS_INVALID', $this->_order_number );
+		            $this->_order_model->updateStatusForOneOrder($this->_order_number, $order, true);
 		            break;
 
                 case self::ORDER_STATUS_REFUND:
                     $order['order_status'] = $this->_current_method->status_refunded;
                     $order['comments'] = vmText::sprintf('VMPAYMENT_TWOCHECKOUT_PAYMENT_STATUS_REFUNDED', $this->_order_number);
+	                $this->_order_model->updateStatusForOneOrder($this->_order_number, $order, true);
                     break;
 
                 default:
-                    throw new Exception('Cannot handle Ipn message type for message');
+	                throw new Exception( 'Cannot handle Ipn message type for message. Order status param invalid.' );
             }
-
-            $this->_order_model->updateStatusForOneOrder($this->_order_number, $order, true);
         }
     }
 

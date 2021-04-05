@@ -103,13 +103,13 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
             return $app->redirect(JRoute::_('index.php/cart'));
         }
 
-	    $orderModel = VmModel::getModel( 'orders' );
-	    $order      = $orderModel->getOrder( $virtuemartOrderId );
-	    $orderModel->updateStatusForOneOrder(
-		    $virtuemartOrderId,
-		    [ 'order_status' => $method->status_success ],
-		    false
-	    );
+        $orderModel = VmModel::getModel( 'orders' );
+        $order      = $orderModel->getOrder( $virtuemartOrderId );
+        $orderModel->updateStatusForOneOrder(
+            $virtuemartOrderId,
+            [ 'order_status' => $method->status_success ],
+            false
+        );
         $cart = VirtueMartCart::getCart();
         $cart->emptyCart();
         $link = JRoute::_("index.php?option=com_virtuemart&view=orders&layout=details&order_number=" . $order['details']['BT']->order_number . "&order_pass=" . $order['details']['BT']->order_pass,
@@ -207,6 +207,8 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
         $this->order_number = $order['details']['BT']->order_number;
         $address = ((isset($order['details']['BT'])) ? $order['details']['BT'] : $order['details']['ST']);
         $lang = JFactory::getLanguage();
+        $paymentCurrency = CurrencyDisplay::getInstance( $this->current_method->payment_currency );
+        $totalInPaymentCurrency = round( $paymentCurrency->convertCurrencyTo( $this->current_method->payment_currency, $order['details']['BT']->order_total, false ), 2 );
         // default json response
         $jsonResponse = [
             'status'   => false,
@@ -222,7 +224,7 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
                 'CustomerIP'        => $this->getCustomerIp(),
                 'Source'            => 'VIRTUEMART_3_8',
                 'ExternalReference' => $this->order_number,
-                'Items'             => $this->getItem($order['details']['BT']->order_total),
+                'Items'             => $this->getItem($totalInPaymentCurrency),
                 'BillingDetails'    => $this->getBillingDetails($address),
                 'PaymentDetails'    => $this->getPaymentDetails($_POST['ess_token'], $order)
             ];
@@ -315,10 +317,10 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
         }
 
         if (!($payment = $this->getDataByOrderId($orderNumber))) {
-	        if (JDEBUG) {
-		        JLog::add( 'Incorrect payment method. Moving on. [2payJS]', JLog::DEBUG, 'IPN-NOTIF' );
-	        }
-	        return false;
+            if (JDEBUG) {
+                JLog::add( 'Incorrect payment method. Moving on. [2payJS]', JLog::DEBUG, 'IPN-NOTIF' );
+            }
+            return false;
         }
 
         if (!$payment) {
@@ -332,14 +334,13 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
         }
         $secretKey = $this->current_method->twocheckout_secret_key;
 
-        if (!class_exists('TcoIpn')) {
-            require VMPATH_PLUGINS . '/vmpayment/twocheckout/twocheckout/helper/tcoipn.php';
+        if (!class_exists('TcoIpnApi')) {
+            require VMPATH_PLUGINS . '/vmpayment/twocheckout/twocheckout/helper/tcoipnapi.php';
         }
 
-        $this->tco_ipn_helper = new TcoIpn($params, $orderNumber, $currentMethod);
+        $this->tco_ipn_helper = new TcoIpnApi($params, $orderNumber, $currentMethod);
 
-
-        if (!$this->tco_ipn_helper->indexAction($params, $orderNumber, $secretKey)) {
+        if (!$this->tco_ipn_helper->indexAction()) {
             return false;
         }
 
@@ -662,8 +663,8 @@ class plgVmPaymentTwocheckout extends vmPSPlugin
 
     public function plgVmonSelectedCalculatePricePayment(VirtueMartCart $cart, array &$cartPrices, &$cartPricesName)
     {
-	    $cart->automaticSelectedPayment=false;
-	    $cart->setCartIntoSession();
+        $cart->automaticSelectedPayment=false;
+        $cart->setCartIntoSession();
 
         return $this->onSelectedCalculatePrice($cart, $cartPrices, $cartPricesName);
     }

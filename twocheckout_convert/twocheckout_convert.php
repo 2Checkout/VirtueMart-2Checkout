@@ -109,7 +109,7 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 	 *
 	 * @return mixed
 	 */
-	public function storeInternalDataParams($order,$cart,$pluginName){
+	public function storeInternalDataParams($order, $cart, $pluginName){
 		$session             = JFactory::getSession();
 		$returnContext      = $session->getId();
 		$paymentCurrency = CurrencyDisplay::getInstance( $this->current_method->payment_currency );
@@ -126,6 +126,37 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 		$dbValues['tax_id']                      = $this->current_method->tax_id;
 
 		return $this->storePSPluginInternalData($dbValues, $this->_tablepkey, 0);
+	}
+
+	/**
+	 * @param $virtuemartOrderId
+	 * @param $tcoOrderNumber
+	 *
+	 * @return mixed
+	 */
+	public function updateInternalDataParams($virtuemartOrderId, $tcoOrderNumber) {
+		if (isset($virtuemartOrderId) && !empty($virtuemartOrderId)) {
+			$db = JFactory::getDBO ();
+			$query = 'SELECT * FROM `' . $this->_tablename . '` WHERE virtuemart_order_id="' . $virtuemartOrderId . '"';
+			$db->setQuery ($query);
+			$existingDbValues = $db->loadAssoc();
+
+			if (!empty($existingDbValues)) {
+				$dbValues = array();
+				$dbValues['virtuemart_order_id']         = $virtuemartOrderId;
+				$dbValues['payment_name']                = $existingDbValues['payment_name'];
+				$dbValues['virtuemart_paymentmethod_id'] = $existingDbValues['virtuemart_paymentmethod_id'];
+				$dbValues['tco_custom']                  = $existingDbValues['tco_custom'];
+				$dbValues['cost_per_transaction']        = $existingDbValues['cost_per_transaction'];
+				$dbValues['cost_percent_total']          = $existingDbValues['cost_percent_total'];
+				$dbValues['payment_currency']            = $existingDbValues['payment_currency'];
+				$dbValues['payment_order_total']         = $existingDbValues['payment_order_total'];
+				$dbValues['tax_id']                      = $existingDbValues['tax_id'];
+				$dbValues['tco_response_order_number']   = $tcoOrderNumber;
+
+				return $this->storePSPluginInternalData($dbValues, 'virtuemart_order_id', TRUE);
+			}
+		}
 	}
 
 	/**
@@ -236,9 +267,11 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 					[ 'order_status' => $method->status_success ],
 					false
 				);
+				$this->updateInternalDataParams( $virtuemartOrderId, $api_response['RefNo'] );
 			}
 		}
 		$cart = VirtueMartCart::getCart();
+		$this->updateInternalDataParams( $order, $api_response['RefNo'] );
 		$cart->emptyCart();
 		$link = JRoute::_("index.php?option=com_virtuemart&view=orders&layout=details&order_number=" . $order['details']['BT']->order_number . "&order_pass=" . $order['details']['BT']->order_pass,
 			false);
@@ -296,15 +329,15 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 		$tcoDetails = $this->_getTcoDetails( $currentMethod );
 		$secretKey  = $tcoDetails['secret_key'];
 
-		if ( ! class_exists( 'TcoIpn' ) )
+		if ( ! class_exists( 'TcoIpnCplus' ) )
 		{
-			require VMPATH_PLUGINS . '/vmpayment/twocheckout_convert/twocheckout_convert/helper/tcoipn.php';
+			require VMPATH_PLUGINS . '/vmpayment/twocheckout_convert/twocheckout_convert/helper/tcoipncplus.php';
 		}
 
-		$this->tco_ipn_helper = new TcoIpn( $params, $orderNumber, $secretKey, $currentMethod );
+		$this->tco_ipn_helper = new TcoIpnCplus( $params, $orderNumber, $secretKey, $currentMethod );
 
 
-		if ( ! $this->tco_ipn_helper->indexAction( $params, $orderNumber, $secretKey ) )
+		if ( ! $this->tco_ipn_helper->indexAction() )
 		{
 			return false;
 		}
@@ -437,8 +470,8 @@ class plgVmPaymentTwocheckout_convert extends vmPSPlugin {
 
 		$amount     = $cartPrices['salesPrice'];
 		$amountCond = ( $amount >= $method->min_amount AND $amount <= $method->max_amount
-		                OR
-		                ( $method->min_amount <= $amount AND ( $method->max_amount == 0 ) ) );
+						OR
+						( $method->min_amount <= $amount AND ( $method->max_amount == 0 ) ) );
 
 		$countries = array();
 		if ( ! empty( $method->countries ) )

@@ -362,11 +362,11 @@ class plgVmpaymentTco_Inline extends vmPSPlugin {
 		$tcoDetails = $this->_getTcoDetails( $currentMethod );
 		$secretKey  = $tcoDetails['secret_key'];
 
-		$this->loadTcoHelper('TcoIpn');
-		$this->tco_ipn_helper = new TcoIpn( $params, $orderNumber, $secretKey, $currentMethod );
+		$this->loadTcoHelper('TcoIpnInline');
+		$this->tco_ipn_helper = new TcoIpnInline( $params, $orderNumber, $secretKey, $currentMethod );
 
 
-		if ( ! $this->tco_ipn_helper->indexAction( $params, $orderNumber, $secretKey ) )
+		if ( ! $this->tco_ipn_helper->indexAction() )
 		{
 			return false;
 		}
@@ -417,6 +417,11 @@ class plgVmpaymentTco_Inline extends vmPSPlugin {
 					[ 'order_status' => $method->status_success ],
 					false
 				);
+				$orderReference = new TwoCheckoutInlineLibrary();
+				$dbValues = $orderReference->updateInternalDataParams( $this->_tablename, $virtuemartOrderId, $api_response['RefNo'] );
+				if (!empty($dbValues)) {
+					$this->storePSPluginInternalData($dbValues, 'virtuemart_order_id', TRUE);
+				}
 			}
 		}
 		$cart = VirtueMartCart::getCart();

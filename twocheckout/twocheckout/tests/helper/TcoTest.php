@@ -1,6 +1,6 @@
 <?php
 use PHPUnit\Framework\TestCase;
-require_once dirname(__DIR__) . '\..\helper\tcoipn.php';
+require_once dirname(__DIR__) . '\..\helper\tcoipnapi.php';
 require_once dirname(__DIR__) . '\..\helper\tcodata.php';
 
 final class TcoTest extends TestCase
@@ -407,9 +407,9 @@ final class TcoTest extends TestCase
     public function testIpnResponseValid(){
         $this->current_method = new stdClass();
         $this->current_method->twocheckout_secret_key = 'test';
-        $tco_ipn_helper = new TcoIpn( $this->params_valid_ipn_mock, $this->order_number, $this->current_method );
+        $tco_ipn_helper = new TcoIpnApi( $this->params_valid_ipn_mock, $this->order_number, $this->current_method );
         $this->assertTrue($tco_ipn_helper->isIpnResponseValid());
-        $tco_ipn_helper_two = new TcoIpn( $this->params_invalid_ipn_mock, $this->order_number, $this->current_method );
+        $tco_ipn_helper_two = new TcoIpnApi( $this->params_invalid_ipn_mock, $this->order_number, $this->current_method );
         $this->assertFalse($tco_ipn_helper_two->isIpnResponseValid());
     }
 

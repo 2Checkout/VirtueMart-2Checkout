@@ -1,6 +1,6 @@
 <?php
 
-class TcoIpn {
+class TcoIpnCplus {
 
 	// NEVER catch exceptions in this file
 	// they're meant to kill the process
@@ -79,7 +79,7 @@ class TcoIpn {
 	public function __construct( $_ipn_params, $_order_number, $_secret_key, $_current_method ) {
 		if ( ! class_exists( 'TcoData' ) )
 		{
-			require VMPATH_PLUGINS . '/vmpayment/tco_inline/tco_inline/helper/TcoData.php';
+			require VMPATH_PLUGINS . '/vmpayment/twocheckout_convert/twocheckout_convert/helper/tcodata.php';
 		}
 		$this->_tco_helper     = new TcoData();
 		$this->_ipn_params     = $_ipn_params;
@@ -112,6 +112,11 @@ class TcoIpn {
 
 		$this->_order_model = VmModel::getModel( 'orders' );
 		$this->_order       = $this->_order_model->getOrder( $this->_order_number );
+
+		if( ! $this->_order ){
+			throw new Exception( sprintf( 'Cannot identify virtue mart order number "%s".',
+				$this->_ipn_params['REFNOEXT'] ) );
+		}
 
 		// do not wrap this in a try catch
 		// it's intentionally left out so that the exceptions will bubble up
@@ -216,30 +221,36 @@ class TcoIpn {
 				case self::ORDER_STATUS_PURCHASE_PENDING:
 				case self::ORDER_STATUS_PENDING_APPROVAL:
 				case self::ORDER_STATUS_PAYMENT_AUTHORIZED:
-					$order['order_status'] = $this->_current_method->status_pending;
-					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_INLINE_PAYMENT_STATUS_PENDING', $this->_order_number );
+				if ($this->_order['details']['BT']->order_status != 'C') {
+						$order['order_status'] = $this->_current_method->status_pending;
+						$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_CONVERT_PAYMENT_STATUS_PENDING', $this->_order_number );
+						$this->_order_model->updateStatusForOneOrder( $this->_order_number, $order, true );
+					}
 					break;
 
 				case self::ORDER_STATUS_COMPLETE:
-					$order['order_status'] = $this->_current_method->status_success;
-					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_INLINE_PAYMENT_STATUS_CONFIRMED', $this->_order_number, $params['REFNO'] );
+					if ($this->_order['details']['BT']->order_status != 'C') {
+						$order['order_status'] = $this->_current_method->status_success;
+						$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_CONVERT_PAYMENT_STATUS_CONFIRMED', $this->_order_number );
+						$this->_order_model->updateStatusForOneOrder( $this->_order_number, $order, true );
+					}
 					break;
 
 				case self::ORDER_STATUS_INVALID:
 					$order['order_status'] = $this->_current_method->status_canceled;
-					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_INLINE_PAYMENT_STATUS_INVALID', $this->_order_number );
+					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_CONVERT_PAYMENT_STATUS_INVALID', $this->_order_number );
+					$this->_order_model->updateStatusForOneOrder( $this->_order_number, $order, true );
 					break;
 
 				case self::ORDER_STATUS_REFUND:
 					$order['order_status'] = $this->_current_method->status_refunded;
-					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_INLINE_PAYMENT_STATUS_REFUNDED', $this->_order_number );
+					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_CONVERT_PAYMENT_STATUS_REFUNDED', $this->_order_number );
+					$this->_order_model->updateStatusForOneOrder( $this->_order_number, $order, true );
 					break;
 
 				default:
-					throw new Exception( 'Cannot handle Ipn message type for message' );
+					throw new Exception( 'Cannot handle Ipn message type for message. Order status param invalid.' );
 			}
-
-			$this->_order_model->updateStatusForOneOrder( $this->_order_number, $order, true );
 		}
 	}
 
@@ -253,10 +264,8 @@ class TcoIpn {
 			switch ( trim( $params['FRAUD_STATUS'] ) )
 			{
 				case self::FRAUD_STATUS_DENIED:
-				case self::ORDER_STATUS_SUSPECT:
-				case self::ORDER_STATUS_INVALID:
 					$order['order_status'] = $this->_current_method->status_fraud;
-					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_INLINE_PAYMENT_FRAUD_STATUS_DENIED', $this->_order_number );
+					$order['comments']     = vmText::sprintf( 'VMPAYMENT_TCO_CONVERT_PAYMENT_FRAUD_STATUS_DENIED', $this->_order_number );
 					break;
 
 				case self::FRAUD_STATUS_APPROVED:
@@ -268,7 +277,7 @@ class TcoIpn {
 					{
 						$order['order_status'] = $this->_current_method->status_pending;
 					}
-					$order['comments'] = vmText::sprintf( 'VMPAYMENT_TCO_INLINE_PAYMENT_FRAUD_STATUS_APPROVED', $this->_order_number );
+					$order['comments'] = vmText::sprintf( 'VMPAYMENT_TCO_CONVERT_PAYMENT_FRAUD_STATUS_APPROVED', $this->_order_number );
 					break;
 			}
 
